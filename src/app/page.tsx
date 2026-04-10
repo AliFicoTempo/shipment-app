@@ -203,9 +203,9 @@ export default function Home() {
               <div className="space-y-4">
                 {/* Tambahkan div pembungkus sticky di sini */}
                 <div className="sticky top-0 z-20 bg-[#f8fafc] py-4 -mx-1">
-                  <div className="flex items-center justify-center px-1">
+                  <div className="p-4 md:p-8 flex items-center justify-center px-1">
                     <h2 className="text-lg font-black text-slate-800 tracking-normal">
-                      —————— Detail Pengiriman ——————
+                      ———— Detail Pengiriman ————
                     </h2>
                   </div>
                 </div>
