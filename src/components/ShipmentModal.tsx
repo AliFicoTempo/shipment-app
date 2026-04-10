@@ -191,7 +191,9 @@ const ShipmentModal: React.FC<ShipmentModalProps> = ({ isOpen, onClose, onSave, 
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Nomor Shipment</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric" 
+                    pattern="[0-9]*"
                     maxLength={10}
                     value={formData.shipment_id}
                     onChange={(e) => setFormData({ ...formData, shipment_id: e.target.value.replace(/\D/g, '') })}
