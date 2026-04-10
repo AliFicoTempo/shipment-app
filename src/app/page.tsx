@@ -145,19 +145,27 @@ export default function Home() {
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 pt-4">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center shadow-premium-lg relative overflow-hidden group">
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-900 rounded-2xl flex items-center justify-center shadow-premium-lg relative overflow-hidden group shrink-0">
               <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-              <Truck className="text-white relative z-10" size={32} strokeWidth={2.5} />
+              <Truck className="text-white relative z-10 w-7 h-7 md:w-8 md:h-8" strokeWidth={2.5} />
             </div>
+            
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2 uppercase">Shipment_Tracker</h1>
+              <h1 className="text-[28px] md:text-4xl font-black text-slate-900 tracking-tight leading-none mb-1.5 md:mb-2 uppercase">Shipment_Tracker</h1>
               <div className="flex items-center gap-2">
                 <span className="w-8 h-0.5 bg-blue-600 rounded-full" />
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Monitoring System v2.0</p>
+                
+                {/* Titik indikator khusus Mobile (Hanya muncul di < md) */}
+                <div className="relative md:hidden flex shrink-0 ml-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                </div>
               </div>
             </div>
           </div>
           
+          {/* Status Badge khusus PC (Tetap dengan teks "Database Linked") */}
           <div className="hidden md:flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-premium border border-slate-100/50">
             <div className="relative">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
