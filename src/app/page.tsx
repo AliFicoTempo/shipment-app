@@ -151,7 +151,7 @@ export default function Home() {
             </div>
             
             <div>
-              <h1 className="text-[28px] md:text-4xl font-black text-slate-900 tracking-tight leading-none mb-1.5 md:mb-2 uppercase">Shipment_Tracker</h1>
+              <h1 className="text-[27px] md:text-4xl font-black text-slate-900 tracking-tight leading-none mb-1.5 md:mb-2 uppercase">Shipment_Tracker</h1>
               <div className="flex items-center gap-2">
                 <span className="w-8 h-0.5 bg-blue-600 rounded-full" />
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Monitoring System v2.0</p>
