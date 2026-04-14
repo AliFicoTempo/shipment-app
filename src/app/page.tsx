@@ -140,7 +140,7 @@ export default function Home() {
   const selectedWorkerName = users.find(u => u.nik_kerja === filters.nik_kerja)?.nama_kerja || '';
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <main className="min-h-screen bg-slate-50 p-4 md:p-8 overflow-y-auto h-full touch-pan-y">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 pt-4">

@@ -10,11 +10,11 @@
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #020617;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #020617;
-  --border: #cbd5e1; /* Sharper border color */
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
 }
 
 body {
@@ -23,46 +23,60 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  overflow: hidden; /* Prevent body scroll entirely */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  /* Support for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
+/* Allow selection in input fields */
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+}
+
+/* Custom Utilities for Premium Look */
 @layer utilities {
-  /* Sharper corners and distinct borders */
-  .card-premium {
-    @apply bg-white border-2 border-slate-200 rounded-xl shadow-sm overflow-hidden;
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
   }
   
-  .border-sharp {
-    @apply border-2 border-slate-200;
-  }
-
   .shadow-premium {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.02);
   }
   
-  .btn-tap {
-    @apply transition-all active:scale-[0.97] active:brightness-90;
+  .shadow-premium-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.03);
   }
 
-  .text-title {
-    @apply font-black tracking-tight text-slate-900 uppercase;
+  /* Button Tap Effect */
+  .btn-tap {
+    @apply transition-all active:scale-95 active:brightness-90;
   }
 }
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #94a3b8;
 }
