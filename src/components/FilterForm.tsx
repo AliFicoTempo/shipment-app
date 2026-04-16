@@ -16,7 +16,8 @@ interface FilterFormProps {
 }
 
 const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onShow, showLockButton = false, isRangeLocked = false, onToggleLock, lockLoading = false }) => {
-  const isButtonActive = filters.nik_kerja && filters.startDate && filters.endDate && filters.endDate >= filters.startDate;
+  const isShowActive = filters.nik_kerja && filters.startDate && filters.endDate && filters.endDate >= filters.startDate;
+  const isLockActive = filters.startDate && filters.endDate && filters.endDate >= filters.startDate;
 
   return (
     <motion.div 
@@ -70,11 +71,11 @@ const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onS
       </div>
 
       <motion.button
-        whileTap={isButtonActive ? { scale: 0.97 } : {}}
+        whileTap={isShowActive ? { scale: 0.97 } : {}}
         onClick={onShow}
-        disabled={!isButtonActive}
+        disabled={!isShowActive}
         className={`h-12 px-10 rounded-lg font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 w-full md:w-auto border-2 ${
-          isButtonActive 
+          isShowActive 
             ? 'bg-slate-900 text-white border-slate-900 hover:bg-black hover:border-black shadow-md' 
             : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
         }`}
@@ -84,18 +85,18 @@ const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onS
 
       {showLockButton && (
         <motion.button
-          whileTap={isButtonActive && !lockLoading ? { scale: 0.97 } : {}}
+          whileTap={isLockActive && !lockLoading ? { scale: 0.97 } : {}}
           onClick={onToggleLock}
-          disabled={!isButtonActive || lockLoading || !onToggleLock}
+          disabled={!isLockActive || lockLoading || !onToggleLock}
           className={`h-12 px-10 rounded-lg font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 w-full md:w-auto border-2 ${
-            !isButtonActive || lockLoading || !onToggleLock
+            !isLockActive || lockLoading || !onToggleLock
               ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
               : isRangeLocked
                 ? 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 shadow-sm'
                 : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-sm'
           }`}
         >
-          {lockLoading ? 'Memproses' : isRangeLocked ? 'Buka Kunci' : 'Kunci Range'}
+          {lockLoading ? 'Memproses' : isRangeLocked ? 'Buka Range' : 'Kunci Range'}
         </motion.button>
       )}
     </motion.div>

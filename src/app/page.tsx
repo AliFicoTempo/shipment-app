@@ -19,7 +19,6 @@ export default function Home() {
   const [filters, setFilters] = useState({ nik_kerja: '', startDate: '', endDate: '' });
   const [shipments, setShipments] = useState<any[]>([]);
   const [locks, setLocks] = useState<any[]>([]);
-  const [exactLockId, setExactLockId] = useState<number | null>(null);
   const [lockLoading, setLockLoading] = useState(false);
   const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -32,6 +31,24 @@ export default function Home() {
     open: false, type: 'success', message: '' 
   });
 
+  const fetchLocksRange = useCallback(async () => {
+    if (!filters.startDate || !filters.endDate) {
+      setLocks([]);
+      return;
+    }
+    try {
+      const locksRes = await fetch(`/api/locks?startDate=${filters.startDate}&endDate=${filters.endDate}`);
+      const locksData = await locksRes.json();
+      if (locksRes.ok) {
+        setLocks(Array.isArray(locksData?.locks) ? locksData.locks : []);
+      } else {
+        setLocks([]);
+      }
+    } catch {
+      setLocks([]);
+    }
+  }, [filters.startDate, filters.endDate]);
+
   const fetchData = useCallback(async () => {
     if (!filters.nik_kerja || !filters.startDate || !filters.endDate) return;
     
@@ -43,20 +60,7 @@ export default function Home() {
       if (res.ok) {
         setShipments(Array.isArray(data) ? data : []);
         setIsDataLoaded(true);
-        try {
-          const locksRes = await fetch(`/api/locks?nik_kerja=${filters.nik_kerja}&startDate=${filters.startDate}&endDate=${filters.endDate}`);
-          const locksData = await locksRes.json();
-          if (locksRes.ok) {
-            setLocks(Array.isArray(locksData?.locks) ? locksData.locks : []);
-            setExactLockId(typeof locksData?.exactLockId === 'number' ? locksData.exactLockId : null);
-          } else {
-            setLocks([]);
-            setExactLockId(null);
-          }
-        } catch {
-          setLocks([]);
-          setExactLockId(null);
-        }
+        await fetchLocksRange();
       } else {
         setShipments([]);
         setConfirmModal({ open: true, type: 'error', message: data.error || 'Gagal mengambil data dari server.' });
@@ -68,18 +72,19 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, fetchLocksRange]);
 
   const toggleLockRange = useCallback(async () => {
-    if (!filters.nik_kerja || !filters.startDate || !filters.endDate) return;
+    if (!filters.startDate || !filters.endDate) return;
     if (!adminToken) {
       setConfirmModal({ open: true, type: 'error', message: 'Unauthorized' });
       return;
     }
     setLockLoading(true);
     try {
-      if (exactLockId) {
-        const res = await fetch(`/api/locks?id=${exactLockId}`, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
+      const hasOverlapLock = Array.isArray(locks) && locks.length > 0;
+      if (hasOverlapLock) {
+        const res = await fetch(`/api/locks?startDate=${filters.startDate}&endDate=${filters.endDate}`, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
         if (res.ok) {
           setConfirmModal({ open: true, type: 'success', message: 'Rentang tanggal berhasil dibuka kuncinya.' });
         } else {
@@ -90,7 +95,7 @@ export default function Home() {
         const res = await fetch('/api/locks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-          body: JSON.stringify({ nik_kerja: filters.nik_kerja, startDate: filters.startDate, endDate: filters.endDate }),
+          body: JSON.stringify({ startDate: filters.startDate, endDate: filters.endDate }),
         });
         if (res.ok) {
           setConfirmModal({ open: true, type: 'success', message: 'Rentang tanggal berhasil dikunci.' });
@@ -103,22 +108,9 @@ export default function Home() {
       setConfirmModal({ open: true, type: 'error', message: 'Gagal terhubung ke server.' });
     } finally {
       setLockLoading(false);
-      try {
-        const locksRes = await fetch(`/api/locks?nik_kerja=${filters.nik_kerja}&startDate=${filters.startDate}&endDate=${filters.endDate}`);
-        const locksData = await locksRes.json();
-        if (locksRes.ok) {
-          setLocks(Array.isArray(locksData?.locks) ? locksData.locks : []);
-          setExactLockId(typeof locksData?.exactLockId === 'number' ? locksData.exactLockId : null);
-        } else {
-          setLocks([]);
-          setExactLockId(null);
-        }
-      } catch {
-        setLocks([]);
-        setExactLockId(null);
-      }
+      await fetchLocksRange();
     }
-  }, [filters, exactLockId]);
+  }, [filters.startDate, filters.endDate, adminToken, locks, fetchLocksRange]);
 
   useEffect(() => {
     try {
@@ -165,6 +157,10 @@ export default function Home() {
     };
     init();
   }, []);
+
+  useEffect(() => {
+    fetchLocksRange();
+  }, [fetchLocksRange]);
 
   const handleSaveShipment = async (formData: any) => {
     try {
@@ -291,7 +287,7 @@ export default function Home() {
           setFilters={setFilters} 
           onShow={fetchData} 
           showLockButton={!!adminToken}
-          isRangeLocked={!!exactLockId}
+          isRangeLocked={Array.isArray(locks) && locks.length > 0}
           onToggleLock={toggleLockRange}
           lockLoading={lockLoading}
         />
