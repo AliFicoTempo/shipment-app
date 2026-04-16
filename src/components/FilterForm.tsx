@@ -9,9 +9,13 @@ interface FilterFormProps {
   filters: { nik_kerja: string; startDate: string; endDate: string };
   setFilters: (filters: any) => void;
   onShow: () => void;
+  showLockButton?: boolean;
+  isRangeLocked?: boolean;
+  onToggleLock?: () => void;
+  lockLoading?: boolean;
 }
 
-const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onShow }) => {
+const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onShow, showLockButton = false, isRangeLocked = false, onToggleLock, lockLoading = false }) => {
   const isButtonActive = filters.nik_kerja && filters.startDate && filters.endDate && filters.endDate >= filters.startDate;
 
   return (
@@ -77,6 +81,23 @@ const FilterForm: React.FC<FilterFormProps> = ({ users, filters, setFilters, onS
       >
         Tampilkan
       </motion.button>
+
+      {showLockButton && (
+        <motion.button
+          whileTap={isButtonActive && !lockLoading ? { scale: 0.97 } : {}}
+          onClick={onToggleLock}
+          disabled={!isButtonActive || lockLoading || !onToggleLock}
+          className={`h-12 px-10 rounded-lg font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 w-full md:w-auto border-2 ${
+            !isButtonActive || lockLoading || !onToggleLock
+              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+              : isRangeLocked
+                ? 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 shadow-sm'
+                : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-sm'
+          }`}
+        >
+          {lockLoading ? 'Memproses' : isRangeLocked ? 'Buka Kunci' : 'Kunci Range'}
+        </motion.button>
+      )}
     </motion.div>
   );
 };

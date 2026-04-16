@@ -18,7 +18,10 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
   
   const isExisting = !!row.shipment_id;
   const isHoliday = row.status.includes('Libur') || row.status === 'Libur Minggu' || (row.status !== 'Sudah Diisi' && row.status !== 'Belum Diisi' && row.status !== 'Masuk Minggu');
-  const isReadonly = isHoliday && !isExisting;
+  const canCreate = !!row.permissions?.canCreate;
+  const canEdit = !!row.permissions?.canEdit;
+  const canDelete = !!row.permissions?.canDelete;
+  const isHolidayEmpty = isHoliday && !isExisting;
 
   // Card style logic
   let cardBg = 'bg-white';
@@ -63,8 +66,8 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
     >
       {/* Header */}
       <div 
-        onClick={() => !isReadonly && setIsExpanded(!isExpanded)}
-        className={`px-6 py-5 flex items-center justify-between transition-all duration-500 select-none ${isExpanded ? 'border-b-2' : ''} ${headerBg} border-black/5 ${isReadonly ? 'cursor-default' : 'cursor-pointer'}`}
+        onClick={() => !isHolidayEmpty && setIsExpanded(!isExpanded)}
+        className={`px-6 py-5 flex items-center justify-between transition-all duration-500 select-none ${isExpanded ? 'border-b-2' : ''} ${headerBg} border-black/5 ${isHolidayEmpty ? 'cursor-default' : 'cursor-pointer'}`}
       >
         <div className="flex flex-col gap-1.5">
           <span className={`text-[14px] font-black tracking-tight ${headerText}`}>
@@ -110,7 +113,7 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
         <div className="flex items-center gap-2">
           {/* Action Buttons only when expanded */}
           <AnimatePresence>
-            {isExpanded && (
+            {isExpanded && (canCreate || canEdit || canDelete) && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8, x: 20 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -118,7 +121,7 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                 className="flex items-center gap-2"
               >
-                {!isReadonly && (
+                {(canEdit || canCreate) && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -132,7 +135,7 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
                     {isExisting ? <Edit2 size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
                   </motion.button>
                 )}
-                {isExisting && (
+                {canDelete && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -147,7 +150,7 @@ const ShipmentCardItem = ({ row, idx, onEdit, onDelete }: { row: any, idx: numbe
           </AnimatePresence>
 
           {/* Toggle Button */}
-          {!isReadonly && (
+          {!isHolidayEmpty && (
             <motion.div
               whileTap={{ scale: 0.9 }}
               className={`w-11 h-11 rounded-xl flex items-center justify-center border-2 transition-all ${

@@ -1,15 +1,12 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --color-primary: #0f172a;
   --color-secondary: #1e293b;
   --color-accent: #2563eb;
   --color-success: #059669;
   --color-danger: #dc2626;
   --color-warning: #d97706;
-}
-
-:root {
   --background: #f1f5f9;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -45,7 +42,9 @@ input, textarea, [contenteditable="true"] {
 /* Custom Utilities for Premium Look */
 @layer utilities {
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20;
+    background-color: rgb(255 255 255 / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgb(255 255 255 / 0.2);
   }
   
   .shadow-premium {
@@ -58,7 +57,12 @@ input, textarea, [contenteditable="true"] {
 
   /* Button Tap Effect */
   .btn-tap {
-    @apply transition-all active:scale-95 active:brightness-90;
+    transition: all 200ms;
+  }
+
+  .btn-tap:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
   }
 }
 

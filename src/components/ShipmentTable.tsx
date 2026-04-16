@@ -33,7 +33,11 @@ const ShipmentTable: React.FC<ShipmentTableProps> = ({ data, onEdit, onDelete })
           {data.map((row, idx) => {
             const isExisting = !!row.shipment_id;
             const isHoliday = row.status.includes('Libur') || row.status === 'Libur Minggu' || (row.status !== 'Sudah Diisi' && row.status !== 'Belum Diisi' && row.status !== 'Masuk Minggu');
-            const isReadonly = isHoliday && !isExisting;
+            const isLocked = !!row.isLocked;
+            const canCreate = !!row.permissions?.canCreate;
+            const canEdit = !!row.permissions?.canEdit;
+            const canDelete = !!row.permissions?.canDelete;
+            const isReadonly = (!canCreate && !canEdit && !canDelete) || (isHoliday && !isExisting);
 
             // Row style logic
             let rowStyle = 'bg-white hover:bg-slate-50';
@@ -78,7 +82,7 @@ const ShipmentTable: React.FC<ShipmentTableProps> = ({ data, onEdit, onDelete })
                 </td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    {!isReadonly && (
+                    {(canEdit || canCreate) && (
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => onEdit(row)}
@@ -92,7 +96,7 @@ const ShipmentTable: React.FC<ShipmentTableProps> = ({ data, onEdit, onDelete })
                         {isExisting ? <Edit2 size={14} strokeWidth={3} /> : <Plus size={14} strokeWidth={3} />}
                       </motion.button>
                     )}
-                    {isExisting && (
+                    {canDelete && (
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => onDelete(row)}
@@ -102,7 +106,11 @@ const ShipmentTable: React.FC<ShipmentTableProps> = ({ data, onEdit, onDelete })
                         <Trash2 size={14} strokeWidth={3} />
                       </motion.button>
                     )}
-                    {isReadonly && <span className="text-[10px] text-white/50 font-black uppercase tracking-widest">Locked</span>}
+                    {isReadonly && (
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isExisting || isHoliday ? 'text-white/50' : 'text-slate-400'}`}>
+                        {isLocked ? 'Terkunci' : 'Locked'}
+                      </span>
+                    )}
                   </div>
                 </td>
               </motion.tr>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { format, parseISO, eachDayOfInterval } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isSunday } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import FilterForm from '@/components/FilterForm';
 import StatsCard from '@/components/StatsCard';
@@ -18,6 +18,10 @@ export default function Home() {
   const [holidays, setHolidays] = useState<any[]>([]);
   const [filters, setFilters] = useState({ nik_kerja: '', startDate: '', endDate: '' });
   const [shipments, setShipments] = useState<any[]>([]);
+  const [locks, setLocks] = useState<any[]>([]);
+  const [exactLockId, setExactLockId] = useState<number | null>(null);
+  const [lockLoading, setLockLoading] = useState(false);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -39,6 +43,20 @@ export default function Home() {
       if (res.ok) {
         setShipments(Array.isArray(data) ? data : []);
         setIsDataLoaded(true);
+        try {
+          const locksRes = await fetch(`/api/locks?nik_kerja=${filters.nik_kerja}&startDate=${filters.startDate}&endDate=${filters.endDate}`);
+          const locksData = await locksRes.json();
+          if (locksRes.ok) {
+            setLocks(Array.isArray(locksData?.locks) ? locksData.locks : []);
+            setExactLockId(typeof locksData?.exactLockId === 'number' ? locksData.exactLockId : null);
+          } else {
+            setLocks([]);
+            setExactLockId(null);
+          }
+        } catch {
+          setLocks([]);
+          setExactLockId(null);
+        }
       } else {
         setShipments([]);
         setConfirmModal({ open: true, type: 'error', message: data.error || 'Gagal mengambil data dari server.' });
@@ -51,6 +69,85 @@ export default function Home() {
       setIsLoading(false);
     }
   }, [filters]);
+
+  const toggleLockRange = useCallback(async () => {
+    if (!filters.nik_kerja || !filters.startDate || !filters.endDate) return;
+    if (!adminToken) {
+      setConfirmModal({ open: true, type: 'error', message: 'Unauthorized' });
+      return;
+    }
+    setLockLoading(true);
+    try {
+      if (exactLockId) {
+        const res = await fetch(`/api/locks?id=${exactLockId}`, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
+        if (res.ok) {
+          setConfirmModal({ open: true, type: 'success', message: 'Rentang tanggal berhasil dibuka kuncinya.' });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setConfirmModal({ open: true, type: 'error', message: err.error || 'Gagal membuka kunci rentang.' });
+        }
+      } else {
+        const res = await fetch('/api/locks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+          body: JSON.stringify({ nik_kerja: filters.nik_kerja, startDate: filters.startDate, endDate: filters.endDate }),
+        });
+        if (res.ok) {
+          setConfirmModal({ open: true, type: 'success', message: 'Rentang tanggal berhasil dikunci.' });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setConfirmModal({ open: true, type: 'error', message: err.error || 'Gagal mengunci rentang.' });
+        }
+      }
+    } catch {
+      setConfirmModal({ open: true, type: 'error', message: 'Gagal terhubung ke server.' });
+    } finally {
+      setLockLoading(false);
+      try {
+        const locksRes = await fetch(`/api/locks?nik_kerja=${filters.nik_kerja}&startDate=${filters.startDate}&endDate=${filters.endDate}`);
+        const locksData = await locksRes.json();
+        if (locksRes.ok) {
+          setLocks(Array.isArray(locksData?.locks) ? locksData.locks : []);
+          setExactLockId(typeof locksData?.exactLockId === 'number' ? locksData.exactLockId : null);
+        } else {
+          setLocks([]);
+          setExactLockId(null);
+        }
+      } catch {
+        setLocks([]);
+        setExactLockId(null);
+      }
+    }
+  }, [filters, exactLockId]);
+
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const tokenFromUrl = url.searchParams.get('adminToken');
+      const logout = url.searchParams.get('logoutAdmin');
+
+      if (logout) {
+        localStorage.removeItem('adminToken');
+        setAdminToken(null);
+        url.searchParams.delete('logoutAdmin');
+        window.history.replaceState({}, '', url.pathname + url.search);
+        return;
+      }
+
+      if (tokenFromUrl) {
+        localStorage.setItem('adminToken', tokenFromUrl);
+        setAdminToken(tokenFromUrl);
+        url.searchParams.delete('adminToken');
+        window.history.replaceState({}, '', url.pathname + url.search);
+        return;
+      }
+
+      const saved = localStorage.getItem('adminToken');
+      if (saved) setAdminToken(saved);
+    } catch {
+      setAdminToken(null);
+    }
+  }, []);
 
   useEffect(() => {
     // Initial fetch for users and holidays
@@ -103,7 +200,8 @@ export default function Home() {
         setConfirmModal({ open: true, type: 'success', message: 'Data shipment berhasil dihapus.' });
         fetchData();
       } else {
-        setConfirmModal({ open: true, type: 'error', message: 'Gagal menghapus data.' });
+        const err = await res.json().catch(() => ({}));
+        setConfirmModal({ open: true, type: 'error', message: err.error || 'Gagal menghapus data.' });
       }
     } catch (error) {
       setConfirmModal({ open: true, type: 'error', message: 'Gagal terhubung ke server.' });
@@ -123,14 +221,25 @@ export default function Home() {
     return days.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const shipment = shipmentMap.get(dateStr);
+      const isHoliday = isSunday(day) || holidayMap.has(dateStr);
+      const isLocked = Array.isArray(locks) ? locks.some(l => dateStr >= l.startDate && dateStr <= l.endDate) : false;
+      const hasShipment = !!shipment;
+      const permissions = {
+        canCreate: !isLocked && !hasShipment && !isHoliday,
+        canEdit: !isLocked && hasShipment,
+        canDelete: !isLocked && hasShipment,
+      };
       return {
         dateStr,
         ...shipment,
         status: getRowStatus(day, holidayMap, !!shipment),
         nik_kerja: filters.nik_kerja, // Ensure nik_kerja is passed for new entries
+        isLocked,
+        isHoliday,
+        permissions,
       };
     });
-  }, [isDataLoaded, filters, shipments, holidays]);
+  }, [isDataLoaded, filters, shipments, holidays, locks]);
 
   const stats = React.useMemo(() => {
     if (!isDataLoaded || !filters.startDate || !filters.endDate) return { hk: 0, hke: 0, ratio: 0, color: '#000000' };
@@ -181,6 +290,10 @@ export default function Home() {
           filters={filters} 
           setFilters={setFilters} 
           onShow={fetchData} 
+          showLockButton={!!adminToken}
+          isRangeLocked={!!exactLockId}
+          onToggleLock={toggleLockRange}
+          lockLoading={lockLoading}
         />
 
         {/* Content Section */}

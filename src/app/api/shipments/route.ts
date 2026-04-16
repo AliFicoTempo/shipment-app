@@ -1,6 +1,34 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+async function ensureLocksTable() {
+  await query(
+    `CREATE TABLE IF NOT EXISTS shipment_locks (
+      id BIGSERIAL PRIMARY KEY,
+      nik_kerja TEXT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+  );
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_shipment_locks_range ON shipment_locks (start_date, end_date)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_shipment_locks_nik ON shipment_locks (nik_kerja)`);
+}
+
+async function isDateLocked(nikKerja: string, tanggal: string) {
+  await ensureLocksTable();
+  const res = await query(
+    `SELECT 1
+     FROM shipment_locks
+     WHERE (nik_kerja IS NULL OR nik_kerja = $1)
+       AND $2::date BETWEEN start_date AND end_date
+     LIMIT 1`,
+    [nikKerja, tanggal]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 // GET shipments based on nik_kerja and date range
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -59,6 +87,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Keterangan is required when Gagal > 0' }, { status: 400 });
     }
 
+    const locked = await isDateLocked(nik_kerja, tanggal);
+    if (locked) {
+      return NextResponse.json({ error: 'Tanggal terkunci. Tidak bisa membuat atau mengubah data pada rentang ini.' }, { status: 423 });
+    }
+
     // Use UPSERT (INSERT ... ON CONFLICT)
     const result = await query(
       `INSERT INTO shipments_data (
@@ -91,6 +124,16 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json({ error: 'Missing shipment ID' }, { status: 400 });
+    }
+
+    const existing = await query(`SELECT nik_kerja, tanggal FROM shipments_data WHERE id = $1`, [id]);
+    if (existing.rowCount === 0) {
+      return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+    }
+
+    const locked = await isDateLocked(existing.rows[0].nik_kerja, existing.rows[0].tanggal);
+    if (locked) {
+      return NextResponse.json({ error: 'Tanggal terkunci. Tidak bisa menghapus data pada rentang ini.' }, { status: 423 });
     }
 
     await query('DELETE FROM shipments_data WHERE id = $1', [id]);
